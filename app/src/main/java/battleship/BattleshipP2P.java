@@ -218,60 +218,65 @@ public class BattleshipP2P {
         }
     }
 
-    private boolean turnoRemoto() throws IOException {
-        System.out.println("\n=== TURNO DEL OPONENTE ===");
-        System.out.println("Esperando disparo del oponente...");
-
-        String mensajeEntrante = entrada.readLine();
-
-        // VERIFICACIÓN DE NULL AÑADIDA
-        if (mensajeEntrante == null) {
-            System.out.println("El oponente se desconectó.");
-            return false;
-        }
-
-        try {
-            ProtocoloBattleship.Mensaje mensaje = ProtocoloBattleship.parsearMensaje(mensajeEntrante);
-
-            if (ProtocoloBattleship.DISPARAR.equals(mensaje.comando)) {
-                boolean impacto = juego.recibirDisparo(mensaje.x, mensaje.y);
-
-                if (impacto) {
-                    String tipoBarco = juego.obtenerTipoBarcoEn(mensaje.x, mensaje.y);
-                    if (juego.estaBarcoHundido(tipoBarco)) {
-                        salida.println(ProtocoloBattleship.construirMensajeResultado(
-                                ProtocoloBattleship.HUNDIDO, mensaje.x, mensaje.y, tipoBarco));
-
-                        if (juego.todosBarcosHundidos()) {
-                            salida.println(ProtocoloBattleship.JUEGO_TERMINADO);
-                            System.out.println("El oponente hundió tu " + tipoBarco);
-                            System.out.println("¡HAS PERDIDO!");
-                            return false;
-                        } else {
-                            System.out.println(
-                                    "El oponente hundió tu " + tipoBarco + " en (" + mensaje.x + "," + mensaje.y + ")");
-                        }
+   private boolean turnoRemoto() throws IOException {
+    System.out.println("\n=== TURNO DEL OPONENTE ===");
+    System.out.println("Esperando disparo del oponente...");
+    
+    String mensajeEntrante = entrada.readLine();
+    
+    if (mensajeEntrante == null) {
+        System.out.println("El oponente se desconectó.");
+        return false;
+    }
+    
+    try {
+        ProtocoloBattleship.Mensaje mensaje = ProtocoloBattleship.parsearMensaje(mensajeEntrante);
+        
+        if (ProtocoloBattleship.DISPARAR.equals(mensaje.comando)) {
+            boolean impacto = juego.recibirDisparo(mensaje.x, mensaje.y);
+            
+            if (impacto) {
+                String tipoBarco = juego.obtenerTipoBarcoEn(mensaje.x, mensaje.y);
+                
+                // VERIFICACIÓN MEJORADA
+                if (tipoBarco.equals("DESCONOCIDO")) {
+                    // No podemos determinar el tipo de barco, solo decimos IMPACTO
+                    salida.println(ProtocoloBattleship.construirMensajeResultado(
+                        ProtocoloBattleship.IMPACTO, mensaje.x, mensaje.y, null));
+                    System.out.println("El oponente impactó en (" + mensaje.x + "," + mensaje.y + ")");
+                } else if (juego.estaBarcoHundido(tipoBarco)) {
+                    salida.println(ProtocoloBattleship.construirMensajeResultado(
+                        ProtocoloBattleship.HUNDIDO, mensaje.x, mensaje.y, tipoBarco));
+                    
+                    if (juego.todosBarcosHundidos()) {
+                        salida.println(ProtocoloBattleship.JUEGO_TERMINADO);
+                        System.out.println("El oponente hundió tu " + tipoBarco);
+                        System.out.println("¡HAS PERDIDO!");
+                        return false;
                     } else {
-                        salida.println(ProtocoloBattleship.construirMensajeResultado(
-                                ProtocoloBattleship.IMPACTO, mensaje.x, mensaje.y, null));
-                        System.out.println("El oponente impactó en (" + mensaje.x + "," + mensaje.y + ")");
+                        System.out.println("El oponente hundió tu " + tipoBarco + " en (" + mensaje.x + "," + mensaje.y + ")");
                     }
                 } else {
                     salida.println(ProtocoloBattleship.construirMensajeResultado(
-                            ProtocoloBattleship.FALLO, mensaje.x, mensaje.y, null));
-                    System.out.println("El oponente falló en (" + mensaje.x + "," + mensaje.y + ")");
+                        ProtocoloBattleship.IMPACTO, mensaje.x, mensaje.y, null));
+                    System.out.println("El oponente impactó en (" + mensaje.x + "," + mensaje.y + ")");
                 }
+            } else {
+                salida.println(ProtocoloBattleship.construirMensajeResultado(
+                    ProtocoloBattleship.FALLO, mensaje.x, mensaje.y, null));
+                System.out.println("El oponente falló en (" + mensaje.x + "," + mensaje.y + ")");
             }
-
-            juego.mostrarTableroPropio();
-            return true;
-
-        } catch (Exception e) {
-            System.out.println("Error procesando mensaje del oponente: " + e.getMessage());
-            return false;
         }
+        
+        juego.mostrarTableroPropio();
+        return true;
+        
+    } catch (Exception e) {
+        System.out.println("Error procesando mensaje del oponente: " + e.getMessage());
+        e.printStackTrace(); // Esto te dará más detalles del error
+        return false;
     }
-
+}
     private int[] obtenerDisparoJugador() {
         while (true) {
             try {
