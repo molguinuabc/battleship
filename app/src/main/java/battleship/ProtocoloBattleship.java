@@ -37,27 +37,35 @@ public class ProtocoloBattleship {
      * Parsea un mensaje recibido
      */
     public static Mensaje parsearMensaje(String mensaje) {
+        if (mensaje == null || mensaje.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mensaje nulo o vacío");
+        }
+
         String[] partes = mensaje.split("\\" + SEPARADOR_CAMPOS);
         String comando = partes[0];
 
-        switch (comando) {
-            case DISPARAR:
-                String[] coordenadas = partes[1].split(SEPARADOR_COORD);
-                int x = Integer.parseInt(coordenadas[0]);
-                int y = Integer.parseInt(coordenadas[1]);
-                return new Mensaje(comando, x, y);
+        try {
+            switch (comando) {
+                case DISPARAR:
+                    String[] coordenadas = partes[1].split(SEPARADOR_COORD);
+                    int x = Integer.parseInt(coordenadas[0]);
+                    int y = Integer.parseInt(coordenadas[1]);
+                    return new Mensaje(comando, x, y);
 
-            case IMPACTO:
-            case FALLO:
-            case HUNDIDO:
-                coordenadas = partes[1].split(SEPARADOR_COORD);
-                x = Integer.parseInt(coordenadas[0]);
-                y = Integer.parseInt(coordenadas[1]);
-                String tipoBarco = partes.length > 2 ? partes[2] : null;
-                return new Mensaje(comando, x, y, tipoBarco);
+                case IMPACTO:
+                case FALLO:
+                case HUNDIDO:
+                    coordenadas = partes[1].split(SEPARADOR_COORD);
+                    x = Integer.parseInt(coordenadas[0]);
+                    y = Integer.parseInt(coordenadas[1]);
+                    String tipoBarco = partes.length > 2 ? partes[2] : null;
+                    return new Mensaje(comando, x, y, tipoBarco);
 
-            default:
-                return new Mensaje(comando);
+                default:
+                    return new Mensaje(comando);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Mensaje con formato inválido: " + mensaje, e);
         }
     }
 
